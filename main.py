@@ -82,6 +82,31 @@ def login():
     return jsonify({"token": token, "username": user['username']})
 
 init_db()
-
+@app.route('/profile', methods=['GET'])
+def profile():
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({"error": "No token"}), 401
+    try:
+        payload = jwt.decode(token, SECRET, algorithms=["HS256"])
+        email = payload['email']
+    except:
+        return jsonify({"error": "Invalid token"}), 401
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT email, username, created_at FROM users WHERE email=%s", (email,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({
+        "email": user['email'],
+        "username": user['username'],
+        "created_at": str(user['created_at'])
+    })
 if __name__ == '__main__':
     app.run(debug=True)
