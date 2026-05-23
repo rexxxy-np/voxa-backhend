@@ -34,7 +34,7 @@ def hash_pw(password):
 
 @app.route('/')
 def home():
-    return jsonify({"message": "Voxa Backend is live! 🎵"})
+    return jsonify({"message": "Voxa Backend is live!"})
 
 @app.route('/health')
 def health():
@@ -56,8 +56,6 @@ def signup():
         conn.commit()
         cur.close()
         conn.close()
-    except psycopg2.errors.UniqueViolation:
-        return jsonify({"error": "Email already registered"}), 409
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     token = jwt.encode({"email": email, "exp": datetime.datetime.utcnow() + datetime.timedelta(days=30)}, SECRET, algorithm="HS256")
@@ -84,27 +82,6 @@ def login():
     return jsonify({"token": token, "username": user['username']})
 
 init_db()
-
-if __name__ == '__main__':
-    app.run(debug=True)    users = load_users()
-    if email in users:
-        return jsonify({"error": "Email already registered"}), 409
-    users[email] = {"username": username, "password": hash_pw(password)}
-    save_users(users)
-    token = jwt.encode({"email": email, "exp": datetime.datetime.utcnow() + datetime.timedelta(days=30)}, SECRET, algorithm="HS256")
-    return jsonify({"token": token, "username": username})
-
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.json
-    email = data.get('email', '').lower().strip()
-    password = data.get('password', '')
-    users = load_users()
-    user = users.get(email)
-    if not user or user['password'] != hash_pw(password):
-        return jsonify({"error": "Invalid email or password"}), 401
-    token = jwt.encode({"email": email, "exp": datetime.datetime.utcnow() + datetime.timedelta(days=30)}, SECRET, algorithm="HS256")
-    return jsonify({"token": token, "username": user['username']})
 
 if __name__ == '__main__':
     app.run(debug=True)
