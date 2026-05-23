@@ -2,3 +2,4 @@ flask
 flask-cors
 gunicorn
 pyjwt
+psycopg2-binary
