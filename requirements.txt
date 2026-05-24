@@ -3,3 +3,4 @@ flask-cors
 gunicorn
 pyjwt
 psycopg2-binary
+yt-dlp
