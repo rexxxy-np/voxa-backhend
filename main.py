@@ -108,5 +108,57 @@ def profile():
         "username": user['username'],
         "created_at": str(user['created_at'])
     })
+    import subprocess, tempfile, os
+
+@app.route('/soundcloud/search', methods=['GET'])
+def sc_search():
+    query = request.args.get('q', '')
+    if not query:
+        return jsonify({"error": "Query required"}), 400
+    try:
+        result = subprocess.run([
+            'yt-dlp',
+            f'scsearch10:{query}',
+            '--dump-json',
+            '--flat-playlist',
+            '--no-download'
+        ], capture_output=True, text=True, timeout=30)
+        tracks = []
+        for line in result.stdout.strip().split('\n'):
+            if line:
+                import json
+                try:
+                    t = json.loads(line)
+                    tracks.append({
+                        'id': t.get('id',''),
+                        'title': t.get('title',''),
+                        'uploader': t.get('uploader',''),
+                        'duration': t.get('duration',0),
+                        'url': t.get('url',''),
+                        'thumbnail': t.get('thumbnail','')
+                    })
+                except: pass
+        return jsonify(tracks)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/soundcloud/download', methods=['GET'])
+def sc_download():
+    url = request.args.get('url', '')
+    if not url:
+        return jsonify({"error": "URL required"}), 400
+    try:
+        result = subprocess.run([
+            'yt-dlp',
+            '-f', 'bestaudio',
+            '--get-url',
+            url
+        ], capture_output=True, text=True, timeout=30)
+        audio_url = result.stdout.strip()
+        if not audio_url:
+            return jsonify({"error": "Could not get audio URL"}), 500
+        return jsonify({"url": audio_url})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 if __name__ == '__main__':
     app.run(debug=True)
